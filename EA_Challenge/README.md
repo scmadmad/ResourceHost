@@ -1,5 +1,5 @@
 ## Offline Challenge
-Author: Andong Ma
+Author: Andong Ma  
 Date: 2020-04-15
 ## Problem
 > Suppose we want to design a Leaderboards service that can hold up to 10 million rows per leaderboard and can handle high concurrency of requests. LeaderboardRow = {rank, userId, score}.
@@ -38,12 +38,14 @@ The height (number of levels) of each node is randomized when its inserted, and 
 
 ![enter image description here](images/search.png?raw=true)
 
-**1. Search**
+**1. Search**  
+
 According to the structure of Skip List, to search a node is quite straightforward. We start from the head in the highest-level list one by one, until we meet the target node, or we meet some node larger than target, then we go down to the next lower level and keep looking. The reason why begin at the highest level is, nodes in higher level are sparser, thus we can move forward faster.
 
 In the above example, when we need to find the node 68, we start from the head in level-3, the first node we met is 20 < 68, then we move to node 20 and keep looking forward. We find the next node 99 > 68, no need to move forward, then we go down to level-2. The node after node 20 in level-2 is 30, and 30 < 68, we move to node 30. Then we find 99 > 68 and go down to level-1, and find 68==68, there we are.
 
-**2. Insert**
+**2. Insert**  
+
 The Insert process is similar with search, with a bit more jobs. In the below case, we want to insert a number 80, the white node is our target node to insert. As the search operation, we start from the head in highest level. Only difference is that every time we go down to the next level, we record current node (As the red circled nodes).
 
 In this example, we randomly give a height of 2 to the new node. Then we will need to update all the recorded nodes in the same or lower level with the new node. That is, node 30 in leve-2 and node 68 in level-1 will be pointed to node 80 respectively, and node 80 will be pointed to their old next node 99.
@@ -54,7 +56,8 @@ In this example, we randomly give a height of 2 to the new node. Then we will ne
 Delete a node is similar as well, we find the target node and record all the precursor nodes, then re-point the precursor nodes to the next node of target nodes. Below picture is an example.
 ![enter image description here](images/delete.jpg?raw=true)
 
-**4. Rank**
+**4. Rank**  
+
 The rank process happens during the search process, with an addition accumulation of the span between nodes. In Skip List, we can maintain a span value for each node in each level. The span equals the distance between the current node with its next. For instance, in level-3, we can go to node 20 from the header within one move but actually cross node 5 and node 11 as well, thus the span of header node in level-3 is 3. In the following case, when searching for 68, we can accumulate the span of all the node we met, which is 3+1+1=5, that is to say the node 68 ranked in the 5th place.
 
 Similarly, we could also use this way to search node by a target rank, the trick is we compare the accumulated span with target rank to decide whether move forward or go down to next level when searching a node instead of comparing node’s value.
@@ -214,13 +217,16 @@ If there is a score boundary, then we could use Bucket Sort to get the rank. We 
 However, if we don’t have a restrict expectation of the precision of rank, then another solution is that we can change the bucket a little bit to save the user score into buckets based on different score ranges. In this way, we can reduce the bucket number and improve the efficiency a lot, which works even if the total score range is huge. For instance, assume that the scores are distributed within the range [0, 99], we can set 4 buckets, each buckets need to store the frequency and the score range. Take the following diagram as example.
 
 ![enter image description here](images/bucket.jpg?raw=true)
+
 In this way, we can predict the rank of a given score. For instance, if a user have score 60, we will be looking at the bucket [50, 74], and use the frequency of this bucket (42) and the highest rank of this section ( score 74 ranked at 5th place) to calculate the target rank by this formula: 
 `Rank = 5 + 42 * (74-60)/(74-50) = 30`
 
 For the highest rank of each bucket, we can simply get them by calculating the frequency of all higher or lower buckets. The time complexity of findRank in this algorithm is O( C ) where C is the number of buckets, and setScore is O(1). Or, we can also set a scheduled task to constantly scan all the buckets and pre-generate their highest rank, which will reduce the findRank to O(1) time complexity.
 
-Pros: Extremely efficient.
-Cons: The rank we got could be imprecise, especially when the scores are not uniformly distributed.
+- Pros
+	- Extremely efficient.
+- Cons
+	- The rank we got could be imprecise, especially when the scores are not uniformly distributed.
 
 
 ## Conclusion
